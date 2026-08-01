@@ -1,0 +1,14 @@
+{
+  "name": "vortexiq-webmcp-example",
+  "version": "1.0.0",
+  "description": "Reference example of how Vortex IQ exposes WebMCP tools on its live site.",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://www.vortexiq.ai",
+  "keywords": ["webmcp", "mcp", "model-context-protocol", "ecommerce", "ai-agents", "agentic-commerce"],
+  "dependencies": {
+    "@mcp-b/webmcp-polyfill": "*",
+    "@mcp-b/transports": "*",
+    "@modelcontextprotocol/sdk": "*"
+  }
+}
