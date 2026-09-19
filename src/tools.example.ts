@@ -1,132 +1,161 @@
 /**
- * Vortex IQ WebMCP example: tool specifications and handlers.
- *
- * This is a self-contained reference version of the 15 tools Vortex IQ
- * registers on its live site (https://www.vortexiq.ai). The handlers here use
- * small representative sample data. On the live site the same handlers read
- * from the real connector directory, blog, pricing, case studies, and trust
- * policies. The tool names, shapes, and the read-first design are identical.
- *
- * Copyright (c) 2026 Vortex IQ. Licensed under the Vortex IQ Sustainable Use
- * License 1.0 (see LICENSE.md). Fair-code, not open source.
+ * Runnable public-tool example. All records and prices below are demo fixtures.
+ * Copyright (c) 2026 Vortex IQ. Vortex IQ Sustainable Use License 1.0.
  */
+import { z } from "zod";
 
 export interface ToolResult {
   content: { type: "text"; text: string }[];
+  isError?: boolean;
+  [key: string]: unknown;
 }
-
-function json(value: unknown): ToolResult {
-  return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
-}
-
-// --- Representative sample data (the live site uses real site data) ---
-
-const SAMPLE_CONNECTORS = [
-  { name: "Shopify", category: "Commerce", desc: "Storefront, orders, products" },
-  { name: "BigCommerce", category: "Commerce", desc: "Catalog, carts, checkout" },
-  { name: "Adobe Commerce", category: "Commerce", desc: "Magento catalog and orders" },
-  { name: "Stripe", category: "Payments", desc: "Payments and settlement" },
-  { name: "Klaviyo", category: "Marketing", desc: "Email and SMS flows" },
-  { name: "GA4", category: "Analytics", desc: "Traffic and conversion" },
+const json = (data: unknown): ToolResult => ({ content: [{ type: "text", text: JSON.stringify({ sample: true, data }, null, 2) }] });
+const failure = (message: string): ToolResult => ({ ...json({ error: message }), isError: true });
+const connectors = [
+  { name: "Shopify", category: "Commerce", description: "Storefront, orders and products" },
+  { name: "BigCommerce", category: "Commerce", description: "Catalogue, carts and checkout" },
+  { name: "Adobe Commerce", category: "Commerce", description: "Magento catalogue and orders" },
+  { name: "Stripe", category: "Payments", description: "Payments and settlement" },
+  { name: "Klaviyo", category: "Marketing", description: "Email and SMS flows" },
+  { name: "GA4", category: "Analytics", description: "Traffic and conversion" },
 ];
-
-const SAMPLE_CATEGORIES = ["Commerce", "Payments", "Marketing", "Analytics", "Fulfilment", "Support"];
-
-const SAMPLE_PLANS = [
-  { id: "growth", name: "Growth", monthly: 199, annual: 1990, stores: 1 },
-  { id: "scale", name: "Scale", monthly: 499, annual: 4990, stores: 5 },
-];
-
-const SAMPLE_POSTS = [
-  { slug: "webmcp-ecommerce-agent-ready", title: "WebMCP for Ecommerce", excerpt: "Make your store agent-ready." },
-];
-
-const SAMPLE_CASE_STUDIES = [
-  { slug: "example-brand", title: "How Example Brand cut incident time", excerpt: "Detection to fix in minutes." },
-];
-
-const SAMPLE_COMPARISONS = [
-  { slug: "vortexiq-vs-generic-monitoring", title: "Vortex IQ vs generic monitoring" },
-];
-
-const SAMPLE_POLICIES = [
-  { slug: "data-protection", title: "Data Protection Policy" },
-  { slug: "ai-model-governance", title: "AI Model Governance Policy" },
-];
-
-// --- Tool specs (name, description, input schema, read-only hint) ---
-
-export const TOOL_SPECS = [
-  { name: "search_connectors", readOnlyHint: true, description: "Search the Vortex IQ integration directory by keyword or category." },
-  { name: "list_connector_categories", readOnlyHint: true, description: "List the integration categories and totals." },
-  { name: "search_blog_posts", readOnlyHint: true, description: "Search Vortex IQ blog posts by keyword or category." },
-  { name: "get_blog_post", readOnlyHint: true, description: "Get a single blog post by slug." },
-  { name: "calculate_roi", readOnlyHint: true, description: "Estimate ROI from store inputs (revenue, products, connectors, deploys)." },
-  { name: "submit_brochure_request", readOnlyHint: false, description: "Request the Vortex IQ brochure by name, email, and company." },
-  { name: "list_comparisons", readOnlyHint: true, description: "List available competitor comparisons." },
-  { name: "get_comparison", readOnlyHint: true, description: "Get a single comparison by slug." },
-  { name: "list_trust_policies", readOnlyHint: true, description: "List Vortex IQ security and trust policies." },
-  { name: "get_trust_policy", readOnlyHint: true, description: "Get a single trust policy by slug." },
-  { name: "get_pricing_plans", readOnlyHint: true, description: "Get the Vortex IQ pricing plans." },
-  { name: "compare_plans", readOnlyHint: true, description: "Compare two pricing plans by id." },
-  { name: "set_billing_period", readOnlyHint: false, description: "Set the pricing display period to monthly or annual." },
-  { name: "search_case_studies", readOnlyHint: true, description: "Search Vortex IQ customer stories." },
-  { name: "get_case_study", readOnlyHint: true, description: "Get a single case study by slug." },
+const plans = [
+  { name: "Foundation", monthly: 100, annual: 1000, features: ["Example reporting"] },
+  { name: "Growth", monthly: 200, annual: 2000, features: ["Example reporting", "Example content preparation"] },
+  { name: "Enterprise", monthly: 300, annual: 3000, features: ["Example portfolio reporting"] },
+  { name: "OmniChannel", monthly: 400, annual: 4000, features: ["Example cross-channel reporting"] },
 ] as const;
+const posts = [{ slug: "webmcp-example", title: "A structured tool example", category: "engineering", text: "This demo shows shared schemas, validated arguments and verified navigation." }];
+const stories = [{ slug: "example-brand", title: "Illustrative customer story", text: "A fictional example, not evidence of a customer outcome." }];
+const comparisons = [{ slug: "example-comparison", title: "Illustrative comparison", text: "Replace this fixture with a maintained, sourced comparison." }];
+const policies = [
+  { slug: "demo-data", title: "Demo data policy", text: "This demo has no merchant data, authentication or email service." },
+  { slug: "demo-control", title: "Demo control policy", text: "Links do not connect stores. Form preparation does not send email." },
+];
+const workflows = [
+  { id: "payment-failures", title: "Payment failure monitoring", platform: "bigcommerce", role: "agency", outcome: "stop-revenue-leaks", workType: "read-and-report", text: "Illustrative workflow: read supported signals and prepare an investigation. No payment or order is changed." },
+  { id: "content-review", title: "Product content review", platform: "shopify", role: "ecommerce", outcome: "accelerate-growth", workType: "prepare-for-approval", text: "Illustrative workflow: prepare product content for human review. No store is changed." },
+];
+export const DESTINATIONS = [
+  { id: "site.pricing.plans", label: "Demo plans", path: "/", section: "plans", text: "Illustrative prices only. These are not Vortex IQ list prices." },
+  { id: "site.integrations", label: "Demo connector directory", path: "/", section: "connectors", text: "Six sample catalogue records; none indicates a connected merchant account." },
+  { id: "site.usecases", label: "Demo workflows", path: "/", section: "workflows", text: "Two illustrative workflows with no merchant execution." },
+  { id: "site.trust", label: "Demo boundaries", path: "/", section: "trust", text: "No merchant access, live pricing, model API key, email delivery or store changes." },
+  { id: "site.brochure.request", label: "Demo brochure form", path: "/", section: "request", text: "Prepare the sample form. Submitting the demo form sends nothing." },
+  ...workflows.map(item => ({ id: `use-case.${item.id}`, label: item.title, path: "/", section: item.id, text: item.text })),
+];
 
-export type ToolName = (typeof TOOL_SPECS)[number]["name"];
+const empty = z.strictObject({});
+const query = z.string().max(160).regex(/^[^\u0000-\u001f\u007f]*$/);
+const slug = z.string().min(1).max(160).regex(/^[a-z0-9-]+$/);
+const currency = z.enum(["USD", "GBP"]);
+const period = z.enum(["monthly", "annual"]);
+const planName = z.enum(["Foundation", "Growth", "Enterprise", "OmniChannel"]);
+const positive = z.number().finite().min(0);
+const pricingInputs = { cur: currency.optional(), billing: period.optional() };
+const workflowFilters = z.strictObject({
+  q: query.optional(), platform: z.enum(["shopify", "bigcommerce"]).optional(),
+  role: z.enum(["agency", "ecommerce"]).optional(),
+  outcome: z.enum(["stop-revenue-leaks", "accelerate-growth"]).optional(),
+  workType: z.enum(["read-and-report", "prepare-for-approval"]).optional(),
+  task: z.enum(["payment-failures", "content-review"]).optional(),
+});
+const connectorFilters = z.strictObject({ q: query.optional(), category: z.enum(["Commerce", "Payments", "Marketing", "Analytics"]).optional() });
+const id = z.string().min(1).max(100).describe("An ID returned by search_site_content or search_use_cases; verified against the registry.");
 
-// --- Handlers ---
+export function resolveDestination(destinationId: string, rawQuery: unknown = {}) {
+  const target = DESTINATIONS.find(item => item.id === destinationId);
+  if (!target) throw new Error("Unknown public destination");
+  const schema = destinationId === "site.integrations" ? connectorFilters : destinationId === "site.usecases" ? workflowFilters : empty;
+  const filters: Record<string, unknown> = schema.parse(rawQuery);
+  const params = new URLSearchParams(Object.entries(filters).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0));
+  return { id: target.id, label: target.label, url: `${target.path}${params.size ? `?${params}` : ""}#${target.section}`, auth: "public", action: "open_link", completesMerchantAction: false };
+}
 
-export function callTool(name: ToolName, args: Record<string, unknown>): ToolResult {
-  switch (name) {
-    case "search_connectors": {
-      const q = String(args.query ?? "").toLowerCase();
-      const cat = String(args.category ?? "").toLowerCase();
-      let r = SAMPLE_CONNECTORS;
-      if (cat) r = r.filter((c) => c.category.toLowerCase() === cat);
-      if (q) r = r.filter((c) => c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q));
-      return json({ matched: r.length, results: r });
+const find = <T extends { slug: string }>(items: readonly T[], key: string) => items.find(item => item.slug === key) ?? (() => { throw new Error("Public record not found"); })();
+const matches = (item: unknown, text = "") => JSON.stringify(item).toLowerCase().includes(text.trim().toLowerCase());
+function price(name: z.infer<typeof planName>, args: { cur?: "USD" | "GBP"; billing?: "monthly" | "annual" }) {
+  const plan = plans.find(item => item.name === name)!;
+  const billing = args.billing ?? "annual";
+  return { ...plan, currency: args.cur ?? "USD", billing, chargedAmount: billing === "annual" ? plan.annual : plan.monthly, note: "Illustrative demo price, not a Vortex IQ offer." };
+}
+
+function defineTool<S extends z.ZodObject>(schema: S, description: string, handler: (args: z.infer<S>) => ToolResult | Promise<ToolResult>, readOnlyHint = true) {
+  return {
+    schema, description, readOnlyHint,
+    async execute(raw: unknown): Promise<ToolResult> {
+      const parsed = schema.safeParse(raw ?? {});
+      if (!parsed.success) return failure("Invalid arguments: " + parsed.error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; "));
+      try { return await handler(parsed.data); }
+      catch (error) { return failure(error instanceof Error ? error.message : "Tool failed"); }
+    },
+  };
+}
+
+export const TOOLS = {
+  search_connectors: defineTool(z.strictObject({ query: query.optional(), category: connectorFilters.shape.category }), "Search sample connectors. Catalogue presence is not a connection.", args => {
+    const results = connectors.filter(item => (!args.category || item.category === args.category) && matches(item, args.query));
+    return json({ matched: results.length, results });
+  }),
+  list_connector_categories: defineTool(empty, "List sample connector categories and counts.", () => json([...new Set(connectors.map(item => item.category))].map(category => ({ category, count: connectors.filter(item => item.category === category).length })))),
+  search_blog_posts: defineTool(z.strictObject({ query: query.optional(), category: slug.optional() }), "Search sample blog content.", args => json(posts.filter(item => (!args.category || item.category === args.category) && matches(item, args.query)))),
+  get_blog_post: defineTool(z.strictObject({ slug }), "Get a sample blog post by slug.", args => json(find(posts, args.slug))),
+  calculate_roi: defineTool(z.strictObject({
+    cur: currency, plan: planName, billing: period.optional(),
+    platform: z.enum(["BigCommerce", "Shopify", "Adobe Commerce", "WooCommerce"]).optional(),
+    products: positive, reportHours: positive, tickets: positive, hourlyRate: positive,
+    images: positive.optional(), categories: positive.optional(), articles: positive.optional(),
+    connectors: positive.optional(), deploys: positive.optional(), otherHours: positive.optional(),
+    monthlyRetainer: positive.optional(), deployCost: positive.optional(), failureRate: positive.max(1).optional(), monthlyRevenue: positive.optional(),
+  }), "Illustrative workload/cost calculation. Not the production ROI model; no revenue uplift is claimed.", args => {
+    const annualHours = args.reportHours * 52 + args.tickets * 12 * 2 + (args.otherHours ?? 0);
+    const annualLabourCost = annualHours * args.hourlyRate;
+    const selected = price(args.plan, args);
+    const annualPlanCost = selected.billing === "annual" ? selected.annual : selected.monthly * 12;
+    return json({ currency: args.cur, annualHours, annualLabourCost, annualPlanCost, estimatedNetSaving: annualLabourCost - annualPlanCost, note: "Demo assumes two hours per ticket and 52 reporting weeks. Other inputs are accepted to illustrate the full production contract but are excluded from this simplified formula. No guaranteed saving or revenue uplift." });
+  }),
+  submit_brochure_request: defineTool(z.strictObject({ name: z.string().trim().min(1).max(160), email: z.email().max(254), company: z.string().trim().min(1).max(160) }), "Prepare a sample form for user review. Never sends email.", args => {
+    if (typeof document !== "undefined") {
+      for (const [name, value] of Object.entries(args)) {
+        const field = document.querySelector<HTMLInputElement>(`#request [name="${name}"]`);
+        if (field) field.value = value;
+      }
     }
-    case "list_connector_categories":
-      return json({ categories: SAMPLE_CATEGORIES });
-    case "search_blog_posts": {
-      const q = String(args.query ?? "").toLowerCase();
-      return json(SAMPLE_POSTS.filter((p) => !q || p.title.toLowerCase().includes(q)));
-    }
-    case "get_blog_post":
-      return json(SAMPLE_POSTS.find((p) => p.slug === args.slug) ?? { error: "not found" });
-    case "calculate_roi": {
-      const revenue = Number(args.revenue ?? 0);
-      const estimate = Math.round(revenue * 0.08);
-      return json({ currency: args.cur ?? "GBP", estimatedAnnualUplift: estimate, note: "Illustrative sample formula." });
-    }
-    case "submit_brochure_request":
-      return json({ ok: true, message: `Brochure queued for ${args.email ?? "unknown"}.` });
-    case "list_comparisons":
-      return json(SAMPLE_COMPARISONS);
-    case "get_comparison":
-      return json(SAMPLE_COMPARISONS.find((c) => c.slug === args.slug) ?? { error: "not found" });
-    case "list_trust_policies":
-      return json(SAMPLE_POLICIES);
-    case "get_trust_policy":
-      return json(SAMPLE_POLICIES.find((p) => p.slug === args.slug) ?? { error: "not found" });
-    case "get_pricing_plans":
-      return json(SAMPLE_PLANS);
-    case "compare_plans": {
-      const a = SAMPLE_PLANS.find((p) => p.id === args.planA);
-      const b = SAMPLE_PLANS.find((p) => p.id === args.planB);
-      return json({ planA: a, planB: b });
-    }
-    case "set_billing_period":
-      return json({ ok: true, period: args.period ?? "monthly" });
-    case "search_case_studies": {
-      const q = String(args.query ?? "").toLowerCase();
-      return json(SAMPLE_CASE_STUDIES.filter((c) => !q || c.title.toLowerCase().includes(q)));
-    }
-    case "get_case_study":
-      return json(SAMPLE_CASE_STUDIES.find((c) => c.slug === args.slug) ?? { error: "not found" });
-    default:
-      return json({ error: `Unknown tool: ${name}` });
-  }
+    return json({ status: "requires_user_action", submitted: false, destination: resolveDestination("site.brochure.request"), message: "Review the sample form. No email has been sent; this demo has no delivery service." });
+  }, false),
+  list_comparisons: defineTool(empty, "List sample comparisons.", () => json(comparisons)),
+  get_comparison: defineTool(z.strictObject({ slug }), "Get a sample comparison.", args => json(find(comparisons, args.slug))),
+  list_trust_policies: defineTool(empty, "List sample trust policies.", () => json(policies)),
+  get_trust_policy: defineTool(z.strictObject({ slug }), "Get a sample trust policy.", args => json(find(policies, args.slug))),
+  get_pricing_plans: defineTool(z.strictObject(pricingInputs), "Get illustrative prices from any page. These are not live Vortex IQ prices.", args => json(plans.map(item => price(item.name, args)))),
+  compare_plans: defineTool(z.strictObject({ planA: planName, planB: planName, ...pricingInputs }), "Compare two illustrative plans.", args => json({ planA: price(args.planA, args), planB: price(args.planB, args) })),
+  set_billing_period: defineTool(z.strictObject({ period }), "Change this demo's pricing display; no subscription is changed.", args => {
+    if (typeof document === "undefined" || !document.getElementById("plans")) throw new Error("Open the demo pricing section first");
+    document.dispatchEvent(new CustomEvent("webmcp:billing", { detail: args.period }));
+    return json({ period: args.period, subscriptionChanged: false });
+  }, false),
+  search_case_studies: defineTool(z.strictObject({ query: query.optional() }), "Search fictional sample stories.", args => json(stories.filter(item => matches(item, args.query)))),
+  get_case_study: defineTool(z.strictObject({ slug }), "Get a fictional sample story.", args => json(find(stories, args.slug))),
+  search_site_content: defineTool(z.strictObject({ query: query.min(1), limit: z.number().int().min(1).max(20).optional() }), "Find demo pages and sections, returning verified destination IDs.", args => json(DESTINATIONS.filter(item => matches(item, args.query)).slice(0, args.limit ?? 8).map(item => ({ ...resolveDestination(item.id), summary: item.text, evidence: "discovery_metadata" })))),
+  get_site_section: defineTool(z.strictObject({ destinationId: id }), "Get a sample content section with source attribution.", args => {
+    const destination = resolveDestination(args.destinationId);
+    const content = DESTINATIONS.find(item => item.id === args.destinationId)!;
+    return json({ destination, text: content.text, source: "demo_fixture", untrustedContent: true, truncated: false });
+  }),
+  search_use_cases: defineTool(workflowFilters, "Search sample workflows and their exact links. Does not run them.", args => json(workflows.filter(item =>
+    (!args.task || item.id === args.task) && (!args.q || matches(item, args.q)) &&
+    (!args.platform || item.platform === args.platform) && (!args.role || item.role === args.role) &&
+    (!args.outcome || item.outcome === args.outcome) && (!args.workType || item.workType === args.workType),
+  ).map(item => ({ ...item, destination: resolveDestination(`use-case.${item.id}`) })))),
+  resolve_navigation_target: defineTool(z.strictObject({ destinationId: id, query: z.record(z.string().max(40), z.string().max(160)).optional() }), "Return a verified demo link and allowed filters. Does not navigate or execute a merchant action.", args => json(resolveDestination(args.destinationId, args.query))),
+} as const;
+
+export type ToolName = keyof typeof TOOLS;
+export const TOOL_SPECS = (Object.keys(TOOLS) as ToolName[]).map(name => ({
+  name, description: TOOLS[name].description, readOnlyHint: TOOLS[name].readOnlyHint,
+  inputSchema: z.toJSONSchema(TOOLS[name].schema, { target: "draft-7" }),
+}));
+export function callTool(name: string, args: unknown = {}): Promise<ToolResult> {
+  if (!Object.prototype.hasOwnProperty.call(TOOLS, name)) return Promise.resolve(failure("Unknown tool"));
+  return TOOLS[name as ToolName].execute(args);
 }

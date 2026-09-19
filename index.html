@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vortex IQ · WebMCP example</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">VORTEX IQ / DEVELOPER EXAMPLE</p>
+        <h1>A website agents can work with.</h1>
+        <p>Try 19 tools with shared, validated schemas and links to exact sections.</p>
+        <p class="notice">Sample data only. This demo has no merchant access or email service. Prices and stories are illustrative.</p>
+        <nav aria-label="Demo sections"><a href="#playground">Try a tool</a><a href="#plans">Plans</a><a href="#connectors">Connectors</a><a href="#workflows">Workflows</a><a href="#trust">Boundaries</a></nav>
+      </header>
+      <section id="playground" aria-labelledby="playground-title">
+        <h2 id="playground-title">Tool playground</h2>
+        <p id="registration-status" role="status">Starting browser tools…</p>
+        <label for="tool">Tool</label><select id="tool"></select>
+        <p id="tool-description"></p>
+        <label for="arguments">Arguments (JSON)</label><textarea id="arguments" rows="7" spellcheck="false"></textarea>
+        <button id="run" type="button">Run tool</button>
+        <pre id="result" aria-live="polite">Choose a tool and run it.</pre>
+        <a id="result-link" hidden>Open the returned section</a>
+      </section>
+      <section id="plans" aria-labelledby="plans-title">
+        <h2 id="plans-title">Illustrative plans</h2>
+        <p>Demo USD amounts. See <a href="https://www.vortexiq.ai/pricing">Vortex IQ pricing</a> for current offers.</p>
+        <label for="billing">Display period</label><select id="billing"><option value="annual">Annual</option><option value="monthly">Monthly</option></select>
+        <ul id="plan-list" class="cards"></ul>
+      </section>
+      <section id="connectors" aria-labelledby="connectors-title">
+        <h2 id="connectors-title">Sample connector directory</h2>
+        <p>Catalogue entries are not connected accounts. <a href="/?q=Klaviyo#connectors">Try a filtered link</a>.</p>
+        <p id="connector-status" role="status"></p><ul id="connector-list" class="cards"></ul>
+      </section>
+      <section id="workflows" aria-labelledby="workflows-title">
+        <h2 id="workflows-title">Sample workflows</h2>
+        <p>Read descriptions and open sections; tools do not run these workflows.</p>
+        <p id="workflow-status" role="status"></p>
+        <article id="payment-failures"><h3>Payment failure monitoring</h3><p>BigCommerce · agency · read and report. Prepare an investigation without changing a payment or order.</p></article>
+        <article id="content-review"><h3>Product content review</h3><p>Shopify · ecommerce · prepare for approval. Prepare content for human review without changing a store.</p></article>
+      </section>
+      <section id="trust" aria-labelledby="trust-title">
+        <h2 id="trust-title">Clear action boundaries</h2>
+        <p>Every result is labelled as sample data. Navigation returns allowlisted links. Billing changes affect the display only. Form preparation never sends email.</p>
+        <p>WebMCP is an evolving browser API. This example includes a polyfill and an optional MCP tab bridge restricted to this page’s origin.</p>
+      </section>
+      <section id="request" aria-labelledby="request-title">
+        <h2 id="request-title">Sample brochure form</h2>
+        <p>The brochure tool can fill these fields for review. This form sends nothing.</p>
+        <form id="request-form">
+          <label for="request-name">Name</label><input id="request-name" name="name" required maxlength="160" autocomplete="name" />
+          <label for="request-email">Email</label><input id="request-email" name="email" type="email" required maxlength="254" autocomplete="email" />
+          <label for="request-company">Company</label><input id="request-company" name="company" required maxlength="160" autocomplete="organization" />
+          <button type="submit">Try demo submission</button><p id="form-status" role="status"></p>
+        </form>
+      </section>
+      <footer><a href="https://github.com/Vortex-IQ/vortexiq-webmcp-example">Source and setup</a> · <a href="https://www.vortexiq.ai">Vortex IQ</a></footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

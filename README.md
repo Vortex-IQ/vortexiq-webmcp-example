@@ -1,55 +1,70 @@
-# Vortex IQ WebMCP: agent-ready storefront example
+# Vortex IQ WebMCP example
 
-This repository shows how [Vortex IQ](https://www.vortexiq.ai) makes its own website usable by AI agents with **WebMCP**, the browser standard from Google and Microsoft that lets a website expose structured tools an in-browser agent can call directly, instead of scraping the page.
+A runnable reference for the public website tools used by [Vortex IQ](https://www.vortexiq.ai): shared input contracts, validated tool calls, discoverable content and links to exact sections.
 
-We do not just recommend agent-readiness. It is live on our own site. This repo is the reference pattern behind it.
+**This repository uses illustrative fixtures.** Prices, customer stories, comparisons, workflows and the simplified ROI calculation are not production data or offers. Every result includes `sample: true`. There is no merchant authentication, store operation or email delivery service.
 
-## What is WebMCP?
+## Run locally
 
-WebMCP lets a website register tools through the `document.modelContext` interface, each with a name, a plain-language description, and a JSON Schema for its inputs. A browser-based AI agent can discover those tools and call them directly. It is the in-browser companion to the Model Context Protocol (MCP), the standard AI clients use to reach external tools.
+Use Node.js 22.12 or newer.
 
-## What is deployed on vortexiq.ai
+```sh
+npm ci
+npm run dev
+```
 
-Fifteen tools are registered on the live site, grouped read-first, with only a couple of safe, clearly scoped actions:
+Open the URL printed by Vite (usually `http://127.0.0.1:5173`). Choose a tool, edit its JSON arguments and run it. No model API key or browser extension is required for the playground.
+
+```sh
+npm test
+npm run build
+npm run preview
+```
+
+Tests use a real MCP SDK client and in-memory transport to verify discovery, schema parity, argument preservation, invalid inputs, navigation restrictions and form behavior. GitHub Actions runs tests and a production build on pushes and pull requests.
+
+## 19 public tools
 
 | Group | Tools |
-|---|---|
-| Discover | `search_connectors`, `list_connector_categories` |
+| --- | --- |
+| Connectors | `search_connectors`, `list_connector_categories` |
 | Content | `search_blog_posts`, `get_blog_post`, `search_case_studies`, `get_case_study` |
-| Evaluate | `list_comparisons`, `get_comparison`, `get_pricing_plans`, `compare_plans`, `calculate_roi` |
+| Evaluation | `list_comparisons`, `get_comparison`, `get_pricing_plans`, `compare_plans`, `calculate_roi` |
 | Trust | `list_trust_policies`, `get_trust_policy` |
-| Act (safe, scoped) | `set_billing_period`, `submit_brochure_request` |
+| Navigation | `search_site_content`, `get_site_section`, `search_use_cases`, `resolve_navigation_target` |
+| Local UI | `set_billing_period`, `submit_brochure_request` |
 
-Each tool is backed by real site data. Nothing destructive is exposed, and nothing acts behind the visitor's back. This is the read-first, safe-writes pattern applied to a real store.
+`submit_brochure_request` retains the public tool name, but prepares a form for review and returns `requires_user_action` with `submitted: false`. It never sends an email. `set_billing_period` changes the display only, not a subscription.
 
-## How it is built
+## How it works
 
-Two registration paths, both from this repo's `src/`:
+- [src/tools.example.ts](src/tools.example.ts) defines handlers and strict Zod schemas. These schemas generate native JSON Schema, register the MCP bridge and validate direct calls. Arguments are not replaced by empty schemas or silently discarded.
+- [src/register.example.ts](src/register.example.ts) registers tools through the [MCP-B polyfill](https://github.com/MiguelsPizza/WebMCP) and optionally exposes the same handlers through an MCP tab transport. The bridge accepts only the current page origin. Native registrations use an AbortSignal; bridge connections close on cleanup.
+- [src/main.ts](src/main.ts) provides the playground, pricing display and filtered directory/workflows independently of an LLM provider.
 
-1. **Native spec path** (`register.example.ts`): `document.modelContext.registerTool(...)` via the [`@mcp-b/webmcp-polyfill`](https://github.com/MiguelsPizza/WebMCP) shim, so it works ahead of full native browser support.
-2. **MCP bridge path**: the same tools exposed as a standard MCP server over a tab transport, so agents using the [MCP-B browser extension](https://chromewebstore.google.com/) can connect.
+WebMCP is an evolving browser API. Native support and extension interoperability depend on the client version and require separate testing. The tab bridge is not an HTTP MCP endpoint or a replacement for server authorization.
 
-`tools.example.ts` shows the tool specs and handlers with representative sample data. On the live site these handlers read from the site's real connector directory, blog, pricing, case studies, and trust policies.
+### Navigation example
 
-## Try it on the live site
+Discover IDs with `search_site_content`, then call `resolve_navigation_target`:
 
-1. Install the **MCP-B extension** for Chrome.
-2. Add a **Gemini API key** from Google AI Studio.
-3. Open [vortexiq.ai](https://www.vortexiq.ai) and ask the agent things like:
-   - "Which payment connectors does Vortex IQ support?"
-   - "Compare the two pricing plans and calculate ROI for a store doing 2,000,000 in revenue."
-   - "What does the data protection policy say?"
+```json
+{
+  "destinationId": "site.integrations",
+  "query": { "q": "Klaviyo" }
+}
+```
 
-## The other half: authenticated remote MCP
+The result points to `/?q=Klaviyo#connectors`; the demo honours this filter. Only registered destinations and permitted filters are accepted. Returned links have `completesMerchantAction: false`. Opening a link does not connect an account.
 
-WebMCP handles anonymous, in-browser agents. For authenticated, account-level access, Vortex IQ also ships a **remote MCP server** that connects to Claude with OAuth 2.1. It is live and listed in [Claude's connector directory](https://claude.ai/directory/connectors/vortex-iq). See the [connect guide](https://docs.vortexiq.ai/integrations/claude-mcp/connect-claude).
+## Adapting the pattern
 
-## Learn more
+Replace fixtures with maintained public content and real pricing. Keep handlers, schemas and page filters aligned. Give destinations stable IDs and existing anchors. Treat retrieved content as untrusted evidence and keep discovery metadata separate from detailed claims.
 
-- Live site: https://www.vortexiq.ai
-- Vortex IQ, the AI Operating System for ecommerce: https://www.vortexiq.ai/ai-os-platform
-- WebMCP for ecommerce (guide): LINK NEEDED: WebMCP pillar post
+Keep authenticated merchant tools behind server authorization. Do not embed credentials in public tools or URLs, or treat annotations as access control. A future Ask Viq/Jev integration can use these contracts; this example does not call Jev or provide a chat widget.
+
+The live website uses its own content, pricing model and destination registry. Sample filter values and destination IDs are not a drop-in production catalogue. For the separate authenticated Vortex IQ MCP connector, see the [connector documentation](https://docs.vortexiq.ai/integrations/claude-mcp/overview).
 
 ## License
 
-Copyright (c) 2026 Vortex IQ. Licensed under the **Vortex IQ Sustainable Use License 1.0** (see [LICENSE.md](LICENSE.md)). This is a fair-code licence, not an open-source one: free to use, self-host, and modify for your own internal or personal use, but you may not resell it or offer it as a hosted service to third parties.
+[Vortex IQ Sustainable Use License 1.0](LICENSE.md). A fair-code license, not an OSI open-source license. See the license for permitted uses and restrictions.
