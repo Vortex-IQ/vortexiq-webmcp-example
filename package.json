@@ -1,14 +1,28 @@
 {
   "name": "vortexiq-webmcp-example",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Reference example of how Vortex IQ exposes WebMCP tools on its live site.",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://www.vortexiq.ai",
   "keywords": ["webmcp", "mcp", "model-context-protocol", "ecommerce", "ai-agents", "agentic-commerce"],
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "engines": { "node": ">=22.12.0" },
   "dependencies": {
-    "@mcp-b/webmcp-polyfill": "*",
-    "@mcp-b/transports": "*",
-    "@modelcontextprotocol/sdk": "*"
+    "@mcp-b/webmcp-polyfill": "4.0.0",
+    "@mcp-b/transports": "4.0.0",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3",
+    "vite": "8.3.0"
   }
 }
